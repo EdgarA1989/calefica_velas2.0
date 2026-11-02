@@ -1,0 +1,12 @@
+# Archivos locales y credenciales; el ejemplo contiene solo valores vacíos.
+.env
+.env.*
+!.env.example
+js/config.local.js
+Calefica-dev.txt
+credentials/
+imports/
+reports/
+node_modules/
+dist/
+*.log

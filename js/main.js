@@ -1,5 +1,5 @@
 const BRAND_CONFIG = {
-  whatsappNumber: "549XXXXXXXXXX",
+  whatsappNumber: (typeof window !== "undefined" && window.CALEFICA_CONFIG?.whatsappNumber) || "549XXXXXXXXXX",
   instagramUrl: "https://www.instagram.com/",
   email: "hola@calefica.com",
 };
@@ -9,7 +9,8 @@ const PRODUCTS_API_URL = "https://script.google.com/macros/s/AKfycbxfWGJ1Is0XOMV
 const DEFAULT_WHATSAPP_NUMBER = BRAND_CONFIG.whatsappNumber;
 const PLACEHOLDER_IMAGE = "";
 
-const CATALOG_STORAGE_KEY = "calefica_productos_v3";
+const DATA_PROVIDER = typeof window !== "undefined" ? (window.CALEFICA_CONFIG?.dataProvider ?? "sheets") : "sheets";
+const CATALOG_STORAGE_KEY = DATA_PROVIDER === "sheets" ? "calefica_productos_v3" : "calefica_productos_supabase_v1";
 const CART_STORAGE_KEY = "calefica_cart_v1";
 
 const LEGACY_CATEGORY_LABELS = {
@@ -32,6 +33,8 @@ let products = [
 ];
 
 let categories = [{ id: "todos", label: "Todos" }, { id: "souvenir", label: "Souvenir" }];
+let providerCategories = null;
+let catalogRequest = null;
 let activeCategory = "todos";
 let currentSlide = 0;
 let mobileCatalogPage = 0;
@@ -48,6 +51,10 @@ document.addEventListener("DOMContentLoaded", () => {
   initHomeLinks();
   initContactLinks();
   initCatalog();
+  if (DATA_PROVIDER === "supabase") {
+    window.addEventListener("focus", () => loadProductsFromApi());
+    window.setInterval(() => { if (!document.hidden) loadProductsFromApi(); }, 600000);
+  }
   initCarouselControls();
   initMobileCatalogControls();
   initTrackDrag();
@@ -157,21 +164,26 @@ function initCatalog() {
 }
 
 async function loadProductsFromApi({ hasCachedProducts = false } = {}) {
+  if (catalogRequest) return catalogRequest;
   if (!isProductsApiConfigured()) {
     renderCategories();
     renderProducts();
     return;
   }
 
-  try {
-    const response = await fetch(PRODUCTS_API_URL, { cache: "no-store" });
-    if (!response.ok) throw new Error("La API no respondio correctamente.");
-
-    const data = await response.json();
+  catalogRequest = (async () => { try {
+    const data = await window.CaleficaProductsService.loadCatalog({ sheetsUrl: PRODUCTS_API_URL });
     if (!data.ok || !Array.isArray(data.productos)) {
       throw new Error(data.error || "La respuesta del catalogo no es valida.");
     }
 
+    providerCategories = data.categorias || null;
+    if (data.settings) {
+      if (data.settings.whatsapp_number) BRAND_CONFIG.whatsappNumber = data.settings.whatsapp_number;
+      if (data.settings.instagram_url) BRAND_CONFIG.instagramUrl = data.settings.instagram_url;
+      if (data.settings.contact_email) BRAND_CONFIG.email = data.settings.contact_email;
+      initContactLinks();
+    }
     const normalizedProducts = data.productos.map(normalizeProduct);
     saveProductsCache(normalizedProducts);
     refreshCatalogData(normalizedProducts);
@@ -179,16 +191,19 @@ async function loadProductsFromApi({ hasCachedProducts = false } = {}) {
     renderProducts();
   } catch (error) {
     console.error(error);
-    if (hasCachedProducts) return;
+    if (hasCachedProducts && DATA_PROVIDER === "sheets") return;
 
     products = [];
     refreshCatalogData(products);
     renderCategories();
     renderCatalogState("error");
-  }
+  } finally { catalogRequest = null; } })();
+  return catalogRequest;
 }
 
 function readProductsCache() {
+  // No conservar catálogo Supabase fuera de línea: evita servir publicaciones retiradas.
+  if (DATA_PROVIDER !== "sheets") return null;
   try {
     const rawCache = localStorage.getItem(CATALOG_STORAGE_KEY);
     if (!rawCache) return null;
@@ -205,6 +220,7 @@ function readProductsCache() {
 }
 
 function saveProductsCache(nextProducts) {
+  if (DATA_PROVIDER !== "sheets") return;
   try {
     localStorage.setItem(CATALOG_STORAGE_KEY, JSON.stringify({
       cachedAt: new Date().toISOString(),
@@ -216,13 +232,14 @@ function saveProductsCache(nextProducts) {
 }
 
 function isProductsApiConfigured() {
+  if (DATA_PROVIDER !== "sheets") return true;
   return PRODUCTS_API_URL && !PRODUCTS_API_URL.includes("PEGAR_URL_PUBLICA");
 }
 
 function refreshCatalogData(nextProducts) {
   products = nextProducts
     .filter(product => product.activo !== false)
-    .filter(product => !["clasicas", "velas-clasicas"].includes(slugify(product.categoria)))
+    .filter(product => DATA_PROVIDER !== "sheets" || !["clasicas", "velas-clasicas"].includes(slugify(product.categoria)))
     .sort((a, b) => a.orden - b.orden || a.nombre.localeCompare(b.nombre));
   quantities = new Map(products.map(product => [product.id, quantities.get(product.id) || 1]));
   categories = buildCategories(products);
@@ -234,6 +251,11 @@ function refreshCatalogData(nextProducts) {
 }
 
 function buildCategories(productList) {
+  if (providerCategories) {
+    return [{ id: "todos", label: "Todos" }, ...providerCategories
+      .filter(category => category.show_when_empty || productList.some(product => product.categoriaId === category.slug))
+      .map(category => ({ id: category.slug, label: category.name }))];
+  }
   const uniqueCategories = [...new Set(productList.map(product => product.categoria).filter(Boolean))];
   return [
     { id: "todos", label: "Todos" },
@@ -252,9 +274,9 @@ function normalizeProduct(product) {
   return {
     id: String(product.id || slugify(product.nombre || `producto-${Date.now()}`)).trim(),
     activo: normalizeYesNo(product.activo, "SI") === "SI",
-    orden: Number(product.orden) || 9999,
+    orden: DATA_PROVIDER === "supabase" && Number.isFinite(Number(product.orden)) ? Number(product.orden) : Number(product.orden) || 9999,
     categoria: rawCategory,
-    categoriaId: slugify(rawCategory),
+    categoriaId: product.categoriaId || slugify(rawCategory),
     nombre: product.nombre || "Producto sin nombre",
     descripcion: product.descripcion || "Producto artesanal de Calefica.",
     aroma: aromas.map(aroma => aroma.nombre).join(", "),
@@ -262,7 +284,7 @@ function normalizeProduct(product) {
     precio: Number(product.precio) || 0,
     nombreImagen: product.nombreImagen || "",
     imagen: product.imagenUrl || product.imagen || "",
-    whatsapp: product.whatsapp || DEFAULT_WHATSAPP_NUMBER,
+    whatsapp: product.whatsapp || BRAND_CONFIG.whatsappNumber,
     stock,
     cantidadStock: String(product.cantidadStock || "").trim(),
     destacado,
@@ -297,8 +319,8 @@ function renderCategories() {
   if (!list) return;
 
   list.innerHTML = categories.map(category => `
-    <button class="category-btn${category.id === activeCategory ? " is-active" : ""}" type="button" data-category="${category.id}">
-      ${category.label}
+    <button class="category-btn${category.id === activeCategory ? " is-active" : ""}" type="button" data-category="${escapeHtml(category.id)}">
+      ${escapeHtml(category.label)}
     </button>
   `).join("");
 
@@ -351,10 +373,10 @@ function renderProducts() {
 function renderProductCard(product) {
   const isOutOfStock = product.stock === "NO";
   const imageStyle = product.imagen
-    ? `style="background-image: url('${product.imagen}')"`
+    ? `style="background-image: url('${escapeHtml(product.imagen.replace(/'/g, "%27"))}')"`
     : "";
   return `
-    <article class="product-card${isOutOfStock ? " is-out-of-stock" : ""}" data-product-id="${product.id}">
+    <article class="product-card${isOutOfStock ? " is-out-of-stock" : ""}" data-product-id="${escapeHtml(product.id)}">
       <div class="product-image${product.imagen ? "" : " product-image--placeholder"}" ${imageStyle}>
         <div class="product-badges">
           ${product.destacado === "SI" ? `<span class="product-badge">Destacado</span>` : ""}
@@ -362,7 +384,7 @@ function renderProductCard(product) {
         </div>
       </div>
       <div class="product-body">
-        <h4>${product.nombre}</h4>
+        <h4>${escapeHtml(product.nombre)}</h4>
         <div class="product-meta">
           ${product.aroma ? `<span>Aroma: <strong>${escapeHtml(product.aroma)}</strong></span>` : ""}
           <span class="price">${formatPrice(product.precio)}</span>
@@ -813,8 +835,8 @@ function getProductBuyWhatsappUrl(product, quantity, aroma = getDefaultAroma(pro
   return getWhatsappUrl(message, product.whatsapp);
 }
 
-function getWhatsappUrl(message, phone = DEFAULT_WHATSAPP_NUMBER) {
-  return `https://wa.me/${phone || DEFAULT_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+function getWhatsappUrl(message, phone = BRAND_CONFIG.whatsappNumber) {
+  return `https://wa.me/${phone || BRAND_CONFIG.whatsappNumber}?text=${encodeURIComponent(message)}`;
 }
 
 function formatPrice(value) {
@@ -1022,7 +1044,7 @@ function renderCart() {
   itemsEl.innerHTML = cart.map(item => `
     <div class="cart-item" data-item-id="${escapeHtml(item.cartKey)}">
       <div class="cart-item__image${item.imagenUrl ? "" : " cart-item__image--placeholder"}"
-           ${item.imagenUrl ? `style="background-image:url('${item.imagenUrl}')"` : ""}></div>
+           ${item.imagenUrl ? `style="background-image:url('${escapeHtml(String(item.imagenUrl).replace(/'/g, "%27"))}')"` : ""}></div>
       <div class="cart-item__info">
         <p class="cart-item__name">${escapeHtml(item.nombre)}</p>
         ${item.aroma ? `<p class="cart-item__aroma">Aroma: ${escapeHtml(item.aroma)}</p>` : ""}
@@ -1105,7 +1127,7 @@ function normalizeWhatsAppNumber(number) {
 }
 
 function getCartWhatsAppNumber(cart) {
-  const number = cart.find(item => item.whatsapp)?.whatsapp || DEFAULT_WHATSAPP_NUMBER;
+  const number = cart.find(item => item.whatsapp)?.whatsapp || BRAND_CONFIG.whatsappNumber;
   return normalizeWhatsAppNumber(number);
 }
 

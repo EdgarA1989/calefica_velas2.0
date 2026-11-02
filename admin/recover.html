@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <title>Recuperar acceso | Calefica</title>
+  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="theme-candle.css">
+  <script src="theme.js"></script>
+  <script defer src="../js/config.js"></script>
+  <script defer src="../js/vendor/supabase.js"></script>
+  <script defer src="../js/lib/supabaseClient.js"></script>
+  <script defer src="../js/services/recoveryService.js"></script>
+  <script defer src="recover.js"></script>
+</head>
+<body>
+  <main class="login-card" style="max-width:600px;margin:auto">
+    <div class="login-top"><a class="brand" href="./"><img src="../assets/img/calefica_logo.png" alt=""><span>Calefica<small>MI NEGOCIO</small></span></a><button type="button" class="theme-toggle" data-theme-toggle aria-label="Cambiar a modo oscuro" aria-pressed="false"></button></div>
+    <p class="eyebrow">RECUPERAR ACCESO</p>
+    <h1 id="recovery-title">Volvé a tu espacio.</h1>
+    <p id="recovery-copy" class="muted">Te enviaremos un enlace para elegir una nueva contraseña. Tu cuenta y tus productos se conservan.</p>
+    <form id="request-form">
+      <label>Email de tu cuenta<input name="email" type="email" autocomplete="username" required></label>
+      <button type="submit" class="primary">Enviar enlace de recuperación</button>
+    </form>
+    <form id="password-form" hidden>
+      <label>Nueva contraseña<input name="password" type="password" autocomplete="new-password" minlength="12" required></label>
+      <label>Repetir contraseña<input name="confirmation" type="password" autocomplete="new-password" minlength="12" required></label>
+      <label class="check"><input id="show-password" type="checkbox">Mostrar contraseñas</label>
+      <button type="submit" class="primary">Guardar nueva contraseña</button>
+    </form>
+    <p id="recovery-status" class="status" role="status" aria-live="polite"></p>
+    <a class="back-link" href="./">← Volver al ingreso</a>
+  </main>
+</body>
+</html>

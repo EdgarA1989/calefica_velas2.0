@@ -68,7 +68,7 @@ test('modal real: radios, variantes, temas, escritorio y mobile', { skip: !fs.ex
   await page('Page.enable');
   await page('Network.enable');
   await page('Network.setBlockedURLs', { urls: ['https://*'] });
-  await page('Page.addScriptToEvaluateOnNewDocument', { source: `window.fetch = async () => ({ok:true,json:async()=>(${JSON.stringify(fixture)})}); window.open = url => window.lastOpenedUrl = url;` });
+  await page('Page.addScriptToEvaluateOnNewDocument', { source: `Object.defineProperty(window,'CALEFICA_CONFIG',{get:()=>({dataProvider:'sheets'}),set:()=>{}});window.fetch = async () => ({ok:true,json:async()=>(${JSON.stringify(fixture)})}); window.open = url => window.lastOpenedUrl = url;` });
   await page('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
   await page('Page.navigate', { url: `http://127.0.0.1:${server.address().port}/` });
   await waitFor('typeof products !== "undefined" && products.some(p => p.id === "multi")');

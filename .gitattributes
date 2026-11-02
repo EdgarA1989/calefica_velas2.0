@@ -1,0 +1,2 @@
+# Conservar el bundle oficial byte por byte, sin normalizar su formato.
+js/vendor/supabase.js -text -whitespace

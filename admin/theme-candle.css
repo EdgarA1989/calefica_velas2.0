@@ -1,0 +1,262 @@
+/* Vela y animaciones originales de css/styles.css. */
+.theme-toggle {
+  position: relative;
+  width: 58px;
+  height: 50px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+  background: linear-gradient(145deg, rgba(255,255,255,.82), rgba(248, 226, 231, .58));
+  box-shadow: 0 12px 28px rgba(96, 68, 45, .1);
+  cursor: pointer;
+  transition: transform .2s ease, background .2s ease, box-shadow .2s ease;
+}
+
+.theme-toggle:hover {
+  transform: translateY(-2px);
+}
+
+.theme-candles {
+  position: relative;
+  width: 46px;
+  height: 34px;
+  display: block;
+}
+
+.theme-candle {
+  position: absolute;
+  border: 2px solid #6d4b54;
+  border-bottom: 0;
+  border-radius: 5px 5px 3px 3px;
+  background: linear-gradient(180deg, #fffaf7, #efd9c8);
+  box-shadow: inset -2px 0 0 rgba(151, 95, 88, .16);
+  transform-origin: center bottom;
+}
+
+.theme-candle--big {
+  right: 6px;
+  bottom: 2px;
+  width: 17px;
+  height: 30px;
+}
+
+.theme-candle--small {
+  left: 6px;
+  bottom: 0;
+  width: 19px;
+  height: 21px;
+}
+
+.theme-wick {
+  position: absolute;
+  left: 50%;
+  top: -9px;
+  width: 2px;
+  height: 9px;
+  border-radius: 999px;
+  background: #6b5144;
+  transform: translateX(-50%);
+  transform-origin: bottom center;
+  z-index: 3;
+}
+
+.theme-flame {
+  position: absolute;
+  left: 50%;
+  top: -18px;
+  width: 10px;
+  height: 14px;
+  z-index: 5;
+  border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%;
+  background: radial-gradient(circle at 50% 70%, #fff5bb 0 18%, #ffca61 42%, #d88a42 74%);
+  box-shadow: 0 0 14px rgba(255, 190, 82, .8);
+  transform: translateX(-50%);
+  transform-origin: 50% 95%;
+  animation: themeFireDance 1.7s ease-in-out infinite;
+}
+
+.theme-light-wave {
+  position: absolute;
+  left: 50%;
+  top: -15px;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 205, 103, .34);
+  background: rgba(255, 200, 105, .16);
+  filter: blur(1px);
+  transform: translateX(-50%);
+  animation: themeLightPulse 1.9s ease-in-out infinite;
+}
+
+.theme-eyes {
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  width: 14px;
+  display: flex;
+  justify-content: space-between;
+  transform: translateX(-50%);
+}
+
+.theme-eyes span {
+  width: 3px;
+  height: 3px;
+  border-radius: 999px;
+  background: #6d4b54;
+}
+
+.theme-candle--big .theme-eyes {
+  top: 7px;
+}
+
+.theme-mouth {
+  position: absolute;
+  left: 35%;
+  top: 16px;
+  width: 0;
+  height: 0;
+  border-radius: 999px;
+  background: #6d4b54;
+  transform: translate(-50%, -50%);
+}
+
+.theme-smoke {
+  position: absolute;
+  left: -5px;
+  top: -14px;
+  z-index: 6;
+  display: block;
+  border-radius: 999px;
+  background: rgba(118, 111, 108, .62);
+  opacity: 0;
+}
+
+.theme-smoke--one {
+  width: 22px;
+  height: 3px;
+}
+
+.theme-smoke--two {
+  top: -20px;
+  width: 8px;
+  height: 8px;
+}
+
+:root[data-theme=dark] .theme-toggle {
+  background: linear-gradient(145deg, rgba(42, 35, 32, .92), rgba(21, 17, 15, .82));
+}
+
+:root[data-theme=dark] .theme-flame,
+:root[data-theme=dark] .theme-light-wave {
+  opacity: 0;
+  animation: none;
+}
+
+:root[data-theme=dark] .theme-candle {
+  background: linear-gradient(180deg, #f0ddcf, #b88f75);
+  border-color: #d0aa89;
+  box-shadow: inset -2px 0 0 rgba(91, 55, 39, .28);
+}
+
+:root[data-theme=dark] .theme-eyes span,
+:root[data-theme=dark] .theme-mouth,
+:root[data-theme=dark] .theme-wick {
+  background: #31231f;
+}
+
+.theme-toggle.is-blowing .theme-candle--big {
+  animation: themeBigBlow .95s cubic-bezier(.22, 1, .36, 1);
+}
+
+.theme-toggle.is-blowing .theme-mouth {
+  animation: themeBlowMouth .95s ease-in-out;
+}
+
+.theme-toggle.is-blowing .theme-candle--small {
+  animation: themeSmallShake .95s ease-in-out;
+}
+
+.theme-toggle.is-blowing .theme-flame {
+  animation: themeFireOut .95s ease-in-out forwards;
+}
+
+.theme-toggle.is-blowing .theme-smoke--one {
+  animation: themeSmokeLeft .95s ease-in-out;
+}
+
+.theme-toggle.is-blowing .theme-smoke--two {
+  animation: themeSmokeTop .95s ease-in-out;
+}
+
+.theme-toggle.is-lighting .theme-flame {
+  animation: themeFireIn .75s cubic-bezier(.22, 1, .36, 1), themeFireDance 1.7s ease-in-out .75s infinite;
+}
+
+.theme-toggle.is-lighting .theme-light-wave {
+  animation: themeLightPop .75s cubic-bezier(.22, 1, .36, 1), themeLightPulse 1.9s ease-in-out .75s infinite;
+}
+
+@keyframes themeFireDance {
+  0%, 100% { transform: translateX(-50%) scale(1) rotate(-3deg); }
+  50% { transform: translateX(-50%) scale(.92, 1.08) rotate(4deg); }
+}
+
+@keyframes themeLightPulse {
+  0%, 100% { opacity: .55; transform: translateX(-50%) scale(.72); }
+  50% { opacity: .2; transform: translateX(-50%) scale(1.08); }
+}
+
+@keyframes themeBigBlow {
+  0%, 40%, 100% { transform: translateX(0) scale(1); }
+  55% { transform: translateX(-3px) scale(1.08); }
+  70% { transform: translateX(1px) scale(.94, 1.04); }
+}
+
+@keyframes themeBlowMouth {
+  0%, 38%, 100% { width: 0; height: 0; }
+  48%, 66% { width: 8px; height: 8px; left: 26%; }
+  78% { width: 3px; height: 3px; left: 20%; }
+}
+
+@keyframes themeSmallShake {
+  0%, 48%, 100% { transform: translateX(0); }
+  58% { transform: translateX(-2px) rotate(-4deg); }
+  66% { transform: translateX(2px) rotate(3deg); }
+  76% { transform: translateX(0) scale(1.08, .9); }
+}
+
+@keyframes themeFireOut {
+  0%, 52% { opacity: 1; transform: translateX(-50%) scale(1) rotate(3deg); }
+  72% { opacity: .45; transform: translateX(-58%) scale(.55) rotate(-12deg); }
+  100% { opacity: 0; transform: translateX(-70%) scale(0); }
+}
+
+@keyframes themeSmokeLeft {
+  0%, 52%, 100% { opacity: 0; width: 0; transform: translateX(0); }
+  62% { opacity: .68; width: 22px; transform: translateX(-4px); }
+  82% { opacity: 0; width: 0; transform: translateX(-16px); }
+}
+
+@keyframes themeSmokeTop {
+  0%, 58%, 100% { opacity: 0; transform: translateY(8px) scale(0); }
+  68% { opacity: .58; transform: translate(-6px, -2px) scale(1); }
+  88% { opacity: 0; transform: translate(-12px, -12px) scale(.35); }
+}
+
+@keyframes themeFireIn {
+  0% { opacity: 0; transform: translateX(-50%) scale(0); }
+  65% { opacity: 1; transform: translateX(-50%) scale(1.18, .88); }
+  100% { opacity: 1; transform: translateX(-50%) scale(1); }
+}
+
+@keyframes themeLightPop {
+  0% { opacity: 0; transform: translateX(-50%) scale(0); }
+  70% { opacity: .48; transform: translateX(-50%) scale(1.16); }
+  100% { opacity: .32; transform: translateX(-50%) scale(.9); }
+}
+
+
+@media(prefers-reduced-motion:reduce){.theme-toggle,.theme-toggle *{animation:none!important;transition:none!important}}

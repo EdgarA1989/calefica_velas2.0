@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Administración | Calefica</title>
+  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="theme-candle.css">
+  <script src="theme.js"></script>
+  <script defer src="../js/config.js"></script>
+  <script defer src="../js/vendor/supabase.js"></script>
+  <script defer src="../js/lib/supabaseClient.js"></script>
+  <script defer src="../js/domain/validation.js"></script>
+  <script defer src="../js/services/adminService.js"></script>
+  <script defer src="admin.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Ir al contenido</a>
+  <section id="login-view" class="login-wrap">
+    <div class="login-card">
+      <div class="login-top"><a class="brand" href="../"><img src="../assets/img/calefica_logo.png" alt=""><span>Calefica<small>VELAS DE SOJA</small></span></a><button type="button" class="theme-toggle" data-theme-toggle aria-label="Cambiar a modo oscuro" aria-pressed="false"></button></div>
+      <p class="eyebrow">UN ESPACIO PARA CREAR</p>
+      <h1>Tu catálogo,<br>a tu manera.</h1>
+      <p class="muted">Ingresá para cuidar cada detalle de tu negocio.</p>
+      <form id="login-form">
+        <label>Email<input name="email" type="email" autocomplete="username" required></label>
+        <label>Contraseña<input name="password" type="password" autocomplete="current-password" required></label>
+        <button type="submit" class="primary">Ingresar al panel</button>
+      </form>
+      <p id="login-status" role="status" aria-live="polite">Comprobando sesión…</p>
+      <a class="back-link" href="recover.html">Olvidé mi contraseña</a><br>
+      <a class="back-link" href="../">← Volver a la tienda</a>
+    </div>
+    <div class="login-art" aria-hidden="true"><span class="art-circle"></span><img src="../assets/img/historia.png" alt=""><p>Pequeños detalles.<br>Momentos cálidos.</p></div>
+  </section>
+  <div id="panel-view" class="shell" hidden>
+    <aside class="sidebar">
+      <a class="brand" href="../"><img src="../assets/img/calefica_logo.png" alt=""><span>Calefica<small>MI NEGOCIO</small></span></a>
+      <nav aria-label="Administración">
+        <button data-section="dashboard" aria-current="page">Resumen</button>
+        <button data-section="products">Productos</button>
+        <button data-section="categories">Categorías</button>
+        <button data-section="aromas">Aromas</button>
+        <button data-section="settings">Configuración</button>
+      </nav>
+      <div class="sidebar-bottom"><a href="../" target="_blank" rel="noopener">Ver tienda ↗</a><span id="session-email"></span><button id="logout" class="quiet">Cerrar sesión</button></div>
+    </aside>
+    <main id="main" tabindex="-1">
+      <header class="page-header"><div><p class="eyebrow">CALEFICA · ADMINISTRACIÓN</p><h1 id="section-title">Resumen</h1></div><div class="page-actions"><button type="button" class="theme-toggle" data-theme-toggle aria-label="Cambiar a modo oscuro" aria-pressed="false"></button><button id="refresh" class="secondary">Actualizar</button></div></header>
+      <p id="provider-notice" class="notice"></p>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+      <div id="content" aria-busy="false"></div>
+    </main>
+  </div>
+  <dialog id="editor" aria-labelledby="editor-title"><div class="dialog-head"><h2 id="editor-title"></h2><button id="close-editor" class="icon-button" aria-label="Cerrar formulario">×</button></div><div id="editor-content"></div><p id="editor-status" class="status" role="status" aria-live="polite"></p></dialog>
+</body>
+</html>
