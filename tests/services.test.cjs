@@ -38,16 +38,11 @@ test('cliente: rechaza secretos y usa sesiones separadas para catálogo y admin'
   assert.notEqual(calls[0][2].auth.storageKey, calls[1][2].auth.storageKey);
 });
 
-test('proveedores: selección explícita, Sheets conserva contrato y Supabase no vuelve a Sheets al fallar', async () => {
+test('catalogo: informa fallos de Supabase sin consultar otras fuentes', async () => {
   let fetches = 0;
-  const root = setup([productsFile], { CALEFICA_CONFIG: { dataProvider: 'sheets' }, fetch: async () => { fetches++; return { ok: true, json: async () => ({ ok: true, productos: [] }) }; } });
-  assert.equal((await root.CaleficaProductsService.loadCatalog({ sheetsUrl: 'fixture' })).ok, true);
-  root.CALEFICA_CONFIG.dataProvider = 'supabase';
-  root.CaleficaSupabase = { getPublicClient() { throw new Error('Sin conexión'); } };
-  await assert.rejects(root.CaleficaProductsService.loadCatalog({ sheetsUrl: 'fixture' }), /Sin conexión/);
-  assert.equal(fetches, 1);
-  root.CALEFICA_CONFIG.dataProvider = 'invalid';
-  assert.throws(() => root.CaleficaProductsService.loadCatalog({}), /Proveedor/);
+  const root = setup([productsFile], { fetch: async () => { fetches++; throw Error('Fuente inesperada'); }, CaleficaSupabase: { getPublicClient() { throw new Error('Sin conexion'); } } });
+  await assert.rejects(root.CaleficaProductsService.loadCatalog(), /Sin conexion/);
+  assert.equal(fetches, 0);
 });
 
 function fakePublic(fixtures, signed) {
@@ -68,7 +63,7 @@ test('Supabase: mapea identidad, categorías, disponibilidad y aromas efectivos;
     { id: 'p2', is_active: false, category_id: 'c1' }, { id: 'p3', is_active: true, category_id: 'c-hidden' }],
     categories: [{ id: 'c1', name: 'Velas', slug: 'velas', is_active: true, show_when_empty: false }, { id: 'c-hidden', is_active: false }],
     site_settings: [{ key: 'whatsapp_number', value: '5491112345678' }] };
-  const root = setup([productsFile], { CALEFICA_CONFIG: { dataProvider: 'supabase' }, CaleficaSupabase: { getPublicClient: () => fakePublic(fixtures, signed), unwrap: result => result.data } });
+  const root = setup([productsFile], { CaleficaSupabase: { getPublicClient: () => fakePublic(fixtures, signed), unwrap: result => result.data } });
   const data = await root.CaleficaProductsService.loadCatalog({});
   assert.equal(data.productos.length, 1);
   const product = data.productos[0];
@@ -81,7 +76,7 @@ test('Supabase: mapea identidad, categorías, disponibilidad y aromas efectivos;
 
 test('consultas de catálogo recorren más de una página de Supabase', async () => {
   const fixtures = { products: Array.from({ length: 501 }, (_, i) => ({ id: `p${i}`, is_active: true, name: `Producto ${i}`, price: '0', category_id: 'c', product_images: [], product_aromas: [] })), categories: [{ id: 'c', is_active: true }], site_settings: [] };
-  const root = setup([productsFile], { CALEFICA_CONFIG: { dataProvider: 'supabase' }, CaleficaSupabase: { getPublicClient: () => fakePublic(fixtures, []), unwrap: result => result.data } });
+  const root = setup([productsFile], { CaleficaSupabase: { getPublicClient: () => fakePublic(fixtures, []), unwrap: result => result.data } });
   assert.equal((await root.CaleficaProductsService.loadCatalog({})).productos.length, 501);
 });
 

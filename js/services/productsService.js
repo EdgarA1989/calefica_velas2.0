@@ -1,10 +1,5 @@
 (function (root) {
   'use strict';
-  const provider = () => {
-    const name = root.CALEFICA_CONFIG?.dataProvider ?? 'sheets';
-    if (!['sheets', 'supabase'].includes(name)) throw new Error('Proveedor de datos no válido. Usá sheets o supabase.');
-    return name;
-  };
   const unwrap = result => root.CaleficaSupabase.unwrap(result);
   async function all(client, table, select) {
     const rows = [];
@@ -13,13 +8,6 @@
       rows.push(...page);
       if (page.length < 500) return rows;
     }
-  }
-  async function sheets(url) {
-    const response = await root.fetch(url, { cache: 'no-store' });
-    if (!response.ok) throw new Error('La API de Sheets no respondió correctamente.');
-    const data = await response.json();
-    if (!data.ok || !Array.isArray(data.productos)) throw new Error(data.error || 'El catálogo de Sheets no es válido.');
-    return data;
   }
   async function supabase() {
     const client = root.CaleficaSupabase.getPublicClient();
@@ -48,5 +36,5 @@
     }));
     return { ok: true, productos: normalized, categorias: [...categoryMap.values()], settings };
   }
-  root.CaleficaProductsService = Object.freeze({ provider, loadCatalog: options => provider() === 'sheets' ? sheets(options.sheetsUrl) : supabase() });
+  root.CaleficaProductsService = Object.freeze({ loadCatalog: supabase });
 })(window);

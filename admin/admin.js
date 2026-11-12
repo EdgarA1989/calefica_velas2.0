@@ -288,9 +288,7 @@
   });
   async function boot() {
     try {
-      $('#provider-notice').textContent = window.CALEFICA_CONFIG?.dataProvider === 'supabase'
-        ? 'La tienda está consultando Supabase. Los cambios se mostrarán al actualizar el catálogo.'
-        : 'La tienda sigue consultando Google Sheets. Los cambios de este panel se guardan en Supabase y se mostrarán cuando activemos ese proveedor.';
+      $('#provider-notice').textContent = 'Los cambios guardados se mostrarán al actualizar el catálogo de la tienda.';
       service.onAuthChange(event => {
         // No hacer llamadas async dentro del lock interno del SDK de Auth.
         if (event === 'SIGNED_OUT') setTimeout(() => lock('Sesión cerrada.'), 0);

@@ -1,4 +1,4 @@
-// El mismo normalizador se incluye en Apps Script para mantener ambos formatos compatibles.
+// Normaliza los aromas del catálogo para mostrarlos y seleccionarlos en la tienda.
 function normalizeAromas(value) {
   const enabled = (value, fallback) => {
     if (value == null || value === "") return fallback;

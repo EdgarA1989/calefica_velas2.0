@@ -1,6 +1,6 @@
 # Calefica — Velas de soja
 
-Web estática con HTML, CSS y JavaScript, catálogo Supabase y panel administrativo en `/admin/`. Conserva Google Sheets como proveedor alternativo seleccionable.
+Web estática con HTML, CSS y JavaScript, catálogo e imágenes en Supabase y panel administrativo en `/admin/`.
 
 ## Ejecutar localmente
 
@@ -14,7 +14,7 @@ npm.cmd run dev
 - Tienda: http://127.0.0.1:8086/
 - Panel: http://127.0.0.1:8086/admin/
 
-`js/config.js` es la configuración pública versionada: proveedor, teléfono comercial, URL y clave **publicable** de Supabase. Es información que recibe cualquier navegador; los permisos se controlan mediante RLS y Auth. Nunca agregar claves secret/service_role, contraseñas o datos internos a este archivo. `js/config.example.js` es una plantilla para otro entorno. `js/config.local.js` se conserva excluido como copia local anterior y ya no se carga en las páginas.
+`js/config.js` es la configuración pública versionada: teléfono comercial, URL y clave **publicable** de Supabase. Es información que recibe cualquier navegador; los permisos se controlan mediante RLS y Auth. Nunca agregar claves secret/service_role, contraseñas o datos internos a este archivo. `js/config.example.js` es una plantilla para otro entorno.
 
 La base de datos y Storage no se copian al clonar el repositorio. El proyecto Supabase configurado debe existir y tener el esquema/permisos aplicados. El usuario del panel debe crearse en Supabase Auth y recibir una membresía en `admin_users`. El registro público debe estar deshabilitado antes de publicar.
 
@@ -24,7 +24,14 @@ La base de datos y Storage no se copian al clonar el repositorio. El proyecto Su
 npm.cmd test
 ```
 
-La suite usa PostgreSQL en memoria y servicios simulados. Las pruebas de navegador usan Edge headless y se omiten si no está instalado. No modifica datos remotos. Las verificaciones opcionales en línea están documentadas en las guías de migración.
+La suite usa PostgreSQL en memoria y servicios simulados. Las pruebas de navegador usan Edge headless y se omiten si no está instalado. No modifica datos remotos.
+
+## Herramientas de mantenimiento
+
+- `scripts/serve-static.cjs`: servidor local, usado por `npm.cmd run dev`.
+- `scripts/vendor-supabase.cjs`: actualiza el bundle oficial del SDK, usado por `npm.cmd run vendor:supabase`.
+- `scripts/check-supabase.cjs`: comprobación opcional de lectura pública, permisos y registro de usuarios; solo hace consultas remotas.
+- `scripts/check-git-secrets.cjs`: revisa archivos candidatos a Git y configuración pública antes de subir cambios.
 
 ## Publicación
 
@@ -35,12 +42,10 @@ El SDK de Supabase está fijado en `package-lock.json` y su bundle oficial se in
 ## Documentación
 
 - [Panel y recuperación de contraseña](docs/ADMIN_GUIDE.md)
-- [Esquema, RLS y Storage](docs/SUPABASE_STAGE_2.md)
-- [Configuración de Supabase](docs/SUPABASE_SETUP.md)
-- [Exportación desde Google Sheets](docs/EXPORT_GOOGLE_SHEETS.md)
-- [Preparación e importación de datos e imágenes](docs/IMPORT_GOOGLE_SHEETS.md)
-- [Auditoría y plan](docs/MIGRATION_PLAN.md)
+- [Configuración, esquema y permisos de Supabase](docs/SUPABASE.md)
 
-`imports/`, `reports/`, `credentials/`, archivos `.env*` y notas locales están excluidos de Git. Los SQL de `supabase/manual/` son plantillas; las copias personales completadas permanecen en `credentials/`.
+`imports/`, `reports/`, `credentials/`, `local-backups/`, archivos `.env*` y notas locales están excluidos de Git. Los archivos de la importación completada se conservan únicamente como respaldo local comprimido en `local-backups/`; no se publican. Los SQL de `supabase/manual/` son plantillas; las copias personales completadas permanecen en `credentials/`.
 
 Esta versión se mantiene en https://github.com/EdgarA1989/calefica_velas2.0. El repositorio anterior `calefica_velas` permanece como backup sin cambios; también se conserva su historial en esta copia. El código de GitHub no sustituye un backup de la base PostgreSQL ni de las imágenes Storage.
+
+La migración desde Google Sheets está completada. Sus scripts, pantalla de importación, pruebas específicas, guías históricas y fotos de ejemplo se retiraron de la versión actual; pueden recuperarse del historial de Git. La tienda consulta Supabase y el panel administra allí los productos y las imágenes.

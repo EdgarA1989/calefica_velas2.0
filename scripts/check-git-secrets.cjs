@@ -2,7 +2,7 @@
 const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const vm = require('node:vm');
-const files = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], { encoding: 'utf8' }).split('\0').filter(Boolean);
+const files = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], { encoding: 'utf8' }).split('\0').filter(file => file && fs.existsSync(file));
 const privateFiles = files.filter(file => /^(imports|reports|credentials|node_modules|dist)\//.test(file) || /\.env(?:\.|$)|config\.local\.js|Calefica-dev\.txt/.test(file));
 const patterns = [
   /sb_secret_[A-Za-z0-9_-]{10,}/,
@@ -17,6 +17,6 @@ for (const file of files) {
 const context = { window: {} };
 vm.runInNewContext(fs.readFileSync('js/config.js', 'utf8'), context);
 const config = context.window.CALEFICA_CONFIG;
-if (Object.keys(config).some(key => !['dataProvider','whatsappNumber','supabaseUrl','supabasePublishableKey'].includes(key)) || !config.supabasePublishableKey.startsWith('sb_publishable_')) throw new Error('La configuración no cumple la lista de campos públicos.');
-console.log(JSON.stringify({ files: files.length, privateFiles, possibleSecrets, provider: config.dataProvider }));
+if (Object.keys(config).some(key => !['whatsappNumber','supabaseUrl','supabasePublishableKey'].includes(key)) || !config.supabasePublishableKey.startsWith('sb_publishable_')) throw new Error('La configuración no cumple la lista de campos públicos.');
+console.log(JSON.stringify({ files: files.length, privateFiles, possibleSecrets }));
 if (privateFiles.length || possibleSecrets.length) process.exitCode = 1;

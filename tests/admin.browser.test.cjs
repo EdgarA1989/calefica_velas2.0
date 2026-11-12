@@ -5,7 +5,7 @@ const path = require('node:path');
 const { browser, browserPath } = require('./helpers/browser.cjs');
 
 const preload = `(() => {
-  Object.defineProperty(window,'CALEFICA_CONFIG',{get:()=>({dataProvider:'sheets'}),set:()=>{}});
+  Object.defineProperty(window,'CALEFICA_CONFIG',{get:()=>({}),set:()=>{}});
   const state = window.__ADMIN_TEST = { signedIn: false, allowed: true, products: [],
     categories: [{id:'c1',name:'Velas',slug:'velas',sort_order:0,is_active:true}],
     aromas: [{id:'a1',name:'Lavanda',color:'#B7A0D4',sort_order:0,is_active:true}], settings:{} };
@@ -32,7 +32,7 @@ const preload = `(() => {
 })();`;
 
 test('login inicia con el SDK real y no consulta datos administrativos sin sesión', { skip: !fs.existsSync(browserPath), timeout: 30000 }, async t => {
-  const { evaluate, page, waitFor, close } = await browser(t, `window.CALEFICA_CONFIG={dataProvider:'sheets',supabaseUrl:'https://example.supabase.co',supabasePublishableKey:'sb_publishable_fixture'};`);
+  const { evaluate, page, waitFor, close } = await browser(t, `window.CALEFICA_CONFIG={supabaseUrl:'https://example.supabase.co',supabasePublishableKey:'sb_publishable_fixture'};`);
   await waitFor('document.querySelector("#login-status")?.textContent.includes("Ingresá")');
   assert.equal(await evaluate('typeof window.supabase.createClient'), 'function');
   assert.equal(await evaluate('document.querySelector("#panel-view").hidden'), true);
@@ -60,7 +60,7 @@ test('panel real: login, CRUD, filtros, validaciones, responsive, logout y revoc
   await evaluate(`document.querySelector('[name=password]').value='prueba-correcta';document.querySelector('#login-form').requestSubmit()`);
   await waitFor('!document.querySelector("#panel-view").hidden');
   assert.equal(await evaluate('document.querySelectorAll(".stat").length'), 4);
-  assert.match(await evaluate('document.querySelector("#provider-notice").textContent'), /Google Sheets/);
+  assert.match(await evaluate('document.querySelector("#provider-notice").textContent'), /Los cambios guardados se mostrarán al actualizar el catálogo/);
   await evaluate('document.querySelector("#panel-view [data-theme-toggle]").click()');
   await waitFor('document.documentElement.dataset.theme === "dark"');
   assert.equal(await evaluate('getComputedStyle(document.querySelector(".stat")).backgroundColor'), 'rgb(31, 32, 37)');

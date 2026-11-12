@@ -4,36 +4,14 @@ const BRAND_CONFIG = {
   email: "hola@calefica.com",
 };
 
-// Pegá acá la URL pública del deploy de Google Apps Script.
-const PRODUCTS_API_URL = "https://script.google.com/macros/s/AKfycbxfWGJ1Is0XOMVcJRRflDdT2aGN4i_zBh5m5vkcdj2wppS1UePgivDzNc5xhzJfj_kK/exec";
 const DEFAULT_WHATSAPP_NUMBER = BRAND_CONFIG.whatsappNumber;
 const PLACEHOLDER_IMAGE = "";
-
-const DATA_PROVIDER = typeof window !== "undefined" ? (window.CALEFICA_CONFIG?.dataProvider ?? "sheets") : "sheets";
-const CATALOG_STORAGE_KEY = DATA_PROVIDER === "sheets" ? "calefica_productos_v3" : "calefica_productos_supabase_v1";
 const CART_STORAGE_KEY = "calefica_cart_v1";
 
-const LEGACY_CATEGORY_LABELS = {
-  aromaticas: "Velas aromaticas",
-  decorativas: "Velas decorativas",
-  combos: "Combos / regalos",
-  extras: "Difusores y extras",
-};
+let products = [];
 
-const IMG = "assets/img/imagenes-productos-calefica/02 - Imagenes productos/";
-
-let products = [
-  { id: "vela-lavanda-soft",   activo: "SI", orden: 1, categoria: "Velas aromáticas",  nombre: "Vela Lavanda Soft",    descripcion: "Vela de soja artesanal con aroma suave a lavanda, ideal para crear un ambiente relajante y cálido.",                                              aroma: "Lavanda",         precio: 22000, imagen: IMG + "vela-lavanda-soft.jpg",   whatsapp: DEFAULT_WHATSAPP_NUMBER, stock: "SI", cantidadStock: "", destacado: "SI" },
-  { id: "vela-vainilla-calida",activo: "SI", orden: 2, categoria: "Velas aromáticas",  nombre: "Vela Vainilla Cálida", descripcion: "Aroma dulce y envolvente de vainilla, perfecta para acompañar momentos de descanso en casa.",                                              aroma: "Vainilla",        precio: 15000, imagen: IMG + "vela-vainilla-calida.jpg",whatsapp: DEFAULT_WHATSAPP_NUMBER, stock: "SI", cantidadStock: "", destacado: "SI" },
-  { id: "vela-rosa-mosqueta",  activo: "SI", orden: 3, categoria: "Velas aromáticas",  nombre: "Vela Rosa Mosqueta",   descripcion: "Una fragancia delicada, floral y elegante para perfumar espacios con una sensación suave y femenina.",                                      aroma: "Rosa mosqueta",   precio:  9000, imagen: IMG + "vela-rosa-mosqueta.jpg",  whatsapp: DEFAULT_WHATSAPP_NUMBER, stock: "SI", cantidadStock: "", destacado: "SI" },
-  { id: "vela-coco-beige",     activo: "SI", orden: 4, categoria: "Velas aromáticas",  nombre: "Vela Coco Beige",      descripcion: "Vela artesanal con notas suaves de coco, pensada para ambientes frescos, cálidos y naturales.",                                            aroma: "Coco",            precio: 17500, imagen: IMG + "vela-coco-beige.jpg",     whatsapp: DEFAULT_WHATSAPP_NUMBER, stock: "SI", cantidadStock: "", destacado: "NO" },
-  { id: "vela-deco-flores",    activo: "SI", orden: 6, categoria: "Velas decorativas", nombre: "Vela Deco Flores",     descripcion: "Vela de soja decorativa con detalles delicados, pensada para regalar o decorar espacios especiales.",                                       aroma: "Floral suave",    precio: 11000, imagen: IMG + "vela-deco-flores.jpg",    whatsapp: DEFAULT_WHATSAPP_NUMBER, stock: "SI", cantidadStock: "", destacado: "SI" },
-  { id: "combo-relax",         activo: "SI", orden: 7, categoria: "Combos y regalos",  nombre: "Combo Relax",          descripcion: "Combo artesanal con vela aromática, detalles decorativos y presentación especial para regalar.",                                            aroma: "Lavanda + Vainilla", precio: 18000, imagen: IMG + "combo-relax.jpg",      whatsapp: DEFAULT_WHATSAPP_NUMBER, stock: "SI", cantidadStock: "", destacado: "SI" },
-  { id: "box-aromatico",       activo: "SI", orden: 8, categoria: "Combos y regalos",  nombre: "Box Aromático",        descripcion: "Box de regalo con selección de velas y aromas delicados. Ideal para cumpleaños, agradecimientos o fechas especiales.",                      aroma: "A elección",      precio: 22000, imagen: IMG + "box-aromatico.jpg",       whatsapp: DEFAULT_WHATSAPP_NUMBER, stock: "SI", cantidadStock: "", destacado: "NO" },
-];
-
-let categories = [{ id: "todos", label: "Todos" }, { id: "souvenir", label: "Souvenir" }];
-let providerCategories = null;
+let categories = [{ id: "todos", label: "Todos" }];
+let providerCategories = [];
 let catalogRequest = null;
 let activeCategory = "todos";
 let currentSlide = 0;
@@ -51,10 +29,8 @@ document.addEventListener("DOMContentLoaded", () => {
   initHomeLinks();
   initContactLinks();
   initCatalog();
-  if (DATA_PROVIDER === "supabase") {
-    window.addEventListener("focus", () => loadProductsFromApi());
-    window.setInterval(() => { if (!document.hidden) loadProductsFromApi(); }, 600000);
-  }
+  window.addEventListener("focus", () => loadProductsFromApi());
+  window.setInterval(() => { if (!document.hidden) loadProductsFromApi(); }, 600000);
   initCarouselControls();
   initMobileCatalogControls();
   initTrackDrag();
@@ -148,36 +124,20 @@ function initContactLinks() {
 }
 
 function initCatalog() {
-  products = products.map(normalizeProduct);
-  const cachedProducts = readProductsCache();
-
-  if (cachedProducts?.length) {
-    refreshCatalogData(cachedProducts);
-    renderCategories();
-    renderProducts();
-  } else {
-    refreshCatalogData(products);
-    renderCatalogState("loading");
-  }
-
-  loadProductsFromApi({ hasCachedProducts: Boolean(cachedProducts?.length) });
+  renderCatalogState("loading");
+  loadProductsFromApi();
 }
 
-async function loadProductsFromApi({ hasCachedProducts = false } = {}) {
+async function loadProductsFromApi() {
   if (catalogRequest) return catalogRequest;
-  if (!isProductsApiConfigured()) {
-    renderCategories();
-    renderProducts();
-    return;
-  }
 
   catalogRequest = (async () => { try {
-    const data = await window.CaleficaProductsService.loadCatalog({ sheetsUrl: PRODUCTS_API_URL });
+    const data = await window.CaleficaProductsService.loadCatalog();
     if (!data.ok || !Array.isArray(data.productos)) {
       throw new Error(data.error || "La respuesta del catalogo no es valida.");
     }
 
-    providerCategories = data.categorias || null;
+    providerCategories = data.categorias || [];
     if (data.settings) {
       if (data.settings.whatsapp_number) BRAND_CONFIG.whatsappNumber = data.settings.whatsapp_number;
       if (data.settings.instagram_url) BRAND_CONFIG.instagramUrl = data.settings.instagram_url;
@@ -185,13 +145,11 @@ async function loadProductsFromApi({ hasCachedProducts = false } = {}) {
       initContactLinks();
     }
     const normalizedProducts = data.productos.map(normalizeProduct);
-    saveProductsCache(normalizedProducts);
     refreshCatalogData(normalizedProducts);
     renderCategories();
     renderProducts();
   } catch (error) {
     console.error(error);
-    if (hasCachedProducts && DATA_PROVIDER === "sheets") return;
 
     products = [];
     refreshCatalogData(products);
@@ -201,45 +159,9 @@ async function loadProductsFromApi({ hasCachedProducts = false } = {}) {
   return catalogRequest;
 }
 
-function readProductsCache() {
-  // No conservar catálogo Supabase fuera de línea: evita servir publicaciones retiradas.
-  if (DATA_PROVIDER !== "sheets") return null;
-  try {
-    const rawCache = localStorage.getItem(CATALOG_STORAGE_KEY);
-    if (!rawCache) return null;
-
-    const parsedCache = JSON.parse(rawCache);
-    if (!Array.isArray(parsedCache.productos)) return null;
-
-    return parsedCache.productos.map(normalizeProduct);
-  } catch (error) {
-    console.warn("No se pudo leer el catalogo guardado.", error);
-    localStorage.removeItem(CATALOG_STORAGE_KEY);
-    return null;
-  }
-}
-
-function saveProductsCache(nextProducts) {
-  if (DATA_PROVIDER !== "sheets") return;
-  try {
-    localStorage.setItem(CATALOG_STORAGE_KEY, JSON.stringify({
-      cachedAt: new Date().toISOString(),
-      productos: nextProducts,
-    }));
-  } catch (error) {
-    console.warn("No se pudo guardar el catalogo local.", error);
-  }
-}
-
-function isProductsApiConfigured() {
-  if (DATA_PROVIDER !== "sheets") return true;
-  return PRODUCTS_API_URL && !PRODUCTS_API_URL.includes("PEGAR_URL_PUBLICA");
-}
-
 function refreshCatalogData(nextProducts) {
   products = nextProducts
     .filter(product => product.activo !== false)
-    .filter(product => DATA_PROVIDER !== "sheets" || !["clasicas", "velas-clasicas"].includes(slugify(product.categoria)))
     .sort((a, b) => a.orden - b.orden || a.nombre.localeCompare(b.nombre));
   quantities = new Map(products.map(product => [product.id, quantities.get(product.id) || 1]));
   categories = buildCategories(products);
@@ -251,30 +173,20 @@ function refreshCatalogData(nextProducts) {
 }
 
 function buildCategories(productList) {
-  if (providerCategories) {
-    return [{ id: "todos", label: "Todos" }, ...providerCategories
-      .filter(category => category.show_when_empty || productList.some(product => product.categoriaId === category.slug))
-      .map(category => ({ id: category.slug, label: category.name }))];
-  }
-  const uniqueCategories = [...new Set(productList.map(product => product.categoria).filter(Boolean))];
-  return [
-    { id: "todos", label: "Todos" },
-    ...uniqueCategories
-      .filter(category => slugify(category) !== "souvenir")
-      .map(category => ({ id: slugify(category), label: category })),
-    { id: "souvenir", label: "Souvenir" },
-  ];
+  return [{ id: "todos", label: "Todos" }, ...providerCategories
+    .filter(category => category.show_when_empty || productList.some(product => product.categoriaId === category.slug))
+    .map(category => ({ id: category.slug, label: category.name }))];
 }
 
 function normalizeProduct(product) {
-  const rawCategory = LEGACY_CATEGORY_LABELS[product.categoria] || product.categoria || "Sin categoria";
+  const rawCategory = product.categoria || "Sin categoria";
   const aromas = normalizeAromas(Array.isArray(product.aromas) ? product.aromas : product.aroma);
   const stock = normalizeYesNo(product.stock, "SI");
   const destacado = normalizeYesNo(product.destacado, "NO");
   return {
     id: String(product.id || slugify(product.nombre || `producto-${Date.now()}`)).trim(),
     activo: normalizeYesNo(product.activo, "SI") === "SI",
-    orden: DATA_PROVIDER === "supabase" && Number.isFinite(Number(product.orden)) ? Number(product.orden) : Number(product.orden) || 9999,
+    orden: Number.isFinite(Number(product.orden)) ? Number(product.orden) : 9999,
     categoria: rawCategory,
     categoriaId: product.categoriaId || slugify(rawCategory),
     nombre: product.nombre || "Producto sin nombre",

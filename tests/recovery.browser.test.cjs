@@ -29,7 +29,7 @@ test('recuperación: envío solo por acción del usuario; nunca muestra cambio s
 
 test('recuperación: enlace válido, confirmación de clave, cierre de sesión y formulario móvil', options, async t => {
   const { evaluate, page, waitFor, close } = await browser(t, preload, '/admin/recover.html#type=recovery');
-  await waitFor('!document.querySelector("#password-form").hidden');
+  await waitFor('document.querySelector("#password-form")?.hidden === false');
   await evaluate(`const f=document.querySelector('#password-form');f.elements.password.value='Nueva-clave-123!';f.elements.confirmation.value='Distinta-clave-123!';f.requestSubmit()`);
   await waitFor('document.querySelector("#recovery-status").textContent.includes("no coinciden")');
   assert.equal(await evaluate('window.__RECOVERY_TEST.updates'), 0);
@@ -50,7 +50,7 @@ test('recuperación: enlace válido, confirmación de clave, cierre de sesión y
 
 test('recuperación: un enlace vencido mantiene oculto el formulario de nueva contraseña', options, async t => {
   const { evaluate, waitFor, close } = await browser(t, preload + 'window.__RECOVERY_TEST.valid=false;', '/admin/recover.html#type=recovery');
-  await waitFor('document.querySelector("#recovery-status").textContent.includes("venció")');
+  await waitFor('document.querySelector("#recovery-status")?.textContent.includes("venció")');
   assert.equal(await evaluate('document.querySelector("#password-form").hidden'), true);
   assert.equal(await evaluate('document.querySelector("#request-form").hidden'), false);
   await close();

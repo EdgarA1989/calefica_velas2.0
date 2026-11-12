@@ -19,7 +19,7 @@ function app() {
 
 const aromas = 'Floral|#B7A0D4|SI|2|NO|floral;Cítrico|#E5CB72|SI|1|SI|citrico;Retirado|#FFFFFF|NO|0';
 
-test('planilla: orden, activo, predeterminado, edición y compatibilidad', () => {
+test('aromas: orden, activo, predeterminado, edición y compatibilidad', () => {
   const { context, run } = app();
   context.raw = aromas;
   assert.equal(run('normalizeAromas(raw).map(a => a.nombre).join(",")'), 'Cítrico,Floral');
@@ -35,21 +35,6 @@ test('planilla: orden, activo, predeterminado, edición y compatibilidad', () =>
   assert.equal(run('normalizeAromas("Floral|#B7A0D4|NO|1").length'), 0);
   assert.equal(run('normalizeAromas("Floral|#112233|SI|1")[0].color'), '#112233');
   assert.equal(run('normalizeAromas("Floral|#112233|SI|1;Nuevo|#445566|SI|2").length'), 2);
-});
-
-test('Apps Script y frontend interpretan exactamente los mismos datos', () => {
-  const { run, context } = app();
-  const backend = vm.createContext({});
-  vm.runInContext(read('google-apps-script/catalogo-productos.gs'), backend);
-  for (const raw of [aromas, '', 'Lavanda', 'Otro|#123456|SI|0', '[{"nombre":"Floral","color":"#B7A0D4"}]']) {
-    context.raw = raw;
-    backend.raw = raw;
-    assert.equal(run('JSON.stringify(normalizeAromas(raw))'), vm.runInContext('JSON.stringify(normalizeAromas(raw))', backend));
-  }
-  backend.raw = aromas;
-  const payload = JSON.parse(vm.runInContext('JSON.stringify(normalizeProduct({ id: "vela", aroma: raw }, {}))', backend));
-  context.payload = payload;
-  assert.equal(run('normalizeProduct(payload).aromas.length'), 2);
 });
 
 test('carrito: variantes separadas, agrupación, controles y mensajes', () => {
@@ -70,35 +55,6 @@ test('carrito: variantes separadas, agrupación, controles y mensajes', () => {
   assert.equal(run('getCart()[0].aroma'), 'Floral');
 });
 
-test('desplegable de planilla: catálogo maestro, selección múltiple y bajas', () => {
-  const backend = vm.createContext({});
-  vm.runInContext(read('google-apps-script/catalogo-productos.gs'), backend);
-  const run = code => vm.runInContext(code, backend);
-  backend.grid = [
-    ['nombre', 'color', 'activo', 'orden', 'predeterminado', 'id'],
-    ['Floral', '#B7A0D4', 'SI', 2, 'NO', 'floral'],
-    ['Cítrico', '#E5CB72', 'SI', 1, 'SI', 'citrico'],
-    ['Retirado', '#FFFFFF', 'NO', 3, 'NO', 'retirado'],
-  ];
-  run('const spreadsheet = { getSheetByName() { return { getDataRange() { return { getValues() { return grid; } }; } }; } }; const master = readAromaCatalog(spreadsheet);');
-  assert.equal(run('normalizeProduct({aroma:"Floral, Cítrico, Retirado, Eliminado"}, {}, master).aromas.map(a => a.nombre).join(",")'), 'Cítrico,Floral');
-  assert.equal(run('resolveProductAromas("floral, citrico", master).length'), 2);
-  assert.equal(run('resolveProductAromas("", master).length'), 0);
-  assert.equal(run('resolveProductAromas("Eliminado", master).length'), 0);
-  assert.equal(run('resolveProductAromas("Floral|#123456|SI|1", master)[0].color'), '#123456');
-  assert.equal(run('resolveProductAromas("Texto anterior", null)[0].nombre'), 'Texto anterior');
-  assert.equal(run('readAromaCatalog({getSheetByName(){return null;}})'), null);
-  backend.grid[1][0] = 'Nombre nuevo';
-  backend.grid[1][1] = '#123456';
-  run('const renamed = readAromaCatalog(spreadsheet)');
-  assert.equal(run('resolveProductAromas("Nombre nuevo", renamed)[0].id'), 'floral');
-  assert.equal(run('resolveProductAromas("Nombre nuevo", renamed)[0].color'), '#123456');
-  backend.grid.push(['Nuevo', '#223344', 'SI', 4, 'NO', 'nuevo']);
-  assert.equal(run('resolveProductAromas("Nuevo", readAromaCatalog(spreadsheet))[0].id'), 'nuevo');
-  backend.grid.push(['Nuevo', '#223344', 'SI', 5, 'NO', 'otro-id']);
-  assert.throws(() => run('readAromaCatalog(spreadsheet)'), /único/);
-});
-
 test('sin aromas, pedidos anteriores y sincronización de variantes editadas o retiradas', () => {
   const { run, context } = app();
   context.raw = aromas;
@@ -112,32 +68,4 @@ test('sin aromas, pedidos anteriores y sincronización de variantes editadas o r
   run('saveCart([{ id:"legacy", aroma:"Lavanda", cantidad:2, precio:10 }]); syncCartWithProducts([normalizeProduct({id:"legacy", stock:"SI", aroma:"Lavanda"})]);');
   assert.equal(run('getCart().length'), 1);
   assert.equal(run('getCart()[0].aroma'), 'Lavanda');
-});
-
-test('detalle ofrece todas las opciones del desplegable, aunque la celda tenga una sola o esté vacía', () => {
-  const backend = vm.createContext({});
-  vm.runInContext(read('google-apps-script/catalogo-productos.gs'), backend);
-  const run = code => vm.runInContext(code, backend);
-  run(`
-    const listRule = {getCriteriaType:()=> 'VALUE_IN_LIST', getCriteriaValues:()=> [['Lavanda','Coco','Vainilla','Coco-Vainilla','Frutos Rojos','Frutilla']]};
-    const rangeRule = {getCriteriaType:()=> 'VALUE_IN_RANGE', getCriteriaValues:()=> [{getValues:()=> [['Lavanda'],['Coco'],['']]}]};
-    const grid = [['id','activo','aromas','nombre','stock'], ['vela','SI','Lavanda','Vela','SI'], ['otra','SI','','Otra','SI']];
-    const validations = [[null,null,null,null], [null,null,listRule,null], [null,null,rangeRule,null]];
-    getSpreadsheet = () => ({getSheetByName: name => name === 'productos' ? {getDataRange:()=> ({getValues:()=>grid,getDataValidations:()=>validations})} : null});
-    const payload = buildProductsResponse();
-  `);
-  assert.equal(run('payload.productos[0].aromas.length'), 6);
-  assert.equal(run('payload.productos[1].aromas.length'), 2);
-  assert.equal(run('payload.productos[0].aromas[5].nombre'), 'Frutilla');
-  assert.equal(run('readAromaDropdownOptions(null)'), null);
-  assert.equal(run('readAromaDropdownOptions({getCriteriaType:()=>"CHECKBOX",getCriteriaValues:()=>[]})'), null);
-  assert.equal(run('normalizeProduct({aroma:"Lavanda",_aromaOptions:[]},{}).aromas.length'), 0);
-  run('const master = [{nombre:"Lavanda",color:"#B7A0D4",id:"lavanda",activo:true,orden:0},{nombre:"Coco",id:"coco",activo:false,orden:1}];');
-  assert.equal(run('normalizeProduct({aroma:"Coco",_aromaOptions:readAromaDropdownOptions(listRule)}, {}, master).aromas.length'), 5);
-  assert.equal(run('normalizeProduct({_aromaOptions:["Lavanda"]}, {}, master).aromas[0].color'), '#B7A0D4');
-  const { run: frontend, context } = app();
-  context.payload = JSON.parse(run('JSON.stringify(payload)'));
-  frontend('const product = normalizeProduct(payload.productos[0]); addToCart(product, 2, product.aromas[2]);');
-  assert.equal(frontend('getCart()[0].aroma'), 'Vainilla');
-  assert.equal(frontend('getCart()[0].cantidad'), 2);
 });

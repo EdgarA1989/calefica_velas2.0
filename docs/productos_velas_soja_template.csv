@@ -1,9 +1,0 @@
-id,activo,orden,categoria,nombre,descripcion,aroma,precio,nombreImagen,whatsapp,stock,cantidadStock,destacado
-vela-lavanda-soft,SI,1,Velas aromáticas,Vela Lavanda Soft,"Vela de soja artesanal con aroma suave a lavanda, ideal para crear un ambiente relajante y cálido.",Lavanda,22000,vela-lavanda-soft.jpg,549XXXXXXXXXX,SI,,SI
-vela-vainilla-calida,SI,2,Velas aromáticas,Vela Vainilla Cálida,"Aroma dulce y envolvente de vainilla, perfecta para acompañar momentos de descanso en casa.",Vainilla,15000,vela-vainilla-calida.jpg,549XXXXXXXXXX,SI,,SI
-vela-rosa-mosqueta,SI,3,Velas aromáticas,Vela Rosa Mosqueta,"Una fragancia delicada, floral y elegante para perfumar espacios con una sensación suave y femenina.",Rosa mosqueta,9000,vela-rosa-mosqueta.jpg,549XXXXXXXXXX,SI,,SI
-vela-coco-beige,SI,4,Velas aromáticas,Vela Coco Beige,"Vela artesanal con notas suaves de coco, pensada para ambientes frescos, cálidos y naturales.",Coco,17500,vela-coco-beige.jpg,549XXXXXXXXXX,SI,,NO
-vela-deco-flores,SI,6,Velas decorativas,Vela Deco Flores,"Vela de soja decorativa con detalles delicados, pensada para regalar o decorar espacios especiales.",Floral suave,11000,vela-deco-flores.jpg,549XXXXXXXXXX,SI,,SI
-combo-relax,SI,7,Combos y regalos,Combo Relax,"Combo artesanal con vela aromática, detalles decorativos y presentación especial para regalar.",Lavanda + Vainilla,18000,combo-relax.jpg,549XXXXXXXXXX,SI,,SI
-box-aromatico,SI,8,Combos y regalos,Box Aromático,"Box de regalo con selección de velas y aromas delicados. Ideal para cumpleaños, agradecimientos o fechas especiales.",A elección,22000,box-aromatico.jpg,549XXXXXXXXXX,SI,,NO
-vela-edicion-especial,NO,9,Edición especial,Vela Edición Especial,"Producto de temporada. Activar cuando esté disponible para la venta.",A definir,12000,vela-edicion-especial.jpg,549XXXXXXXXXX,NO,,NO
